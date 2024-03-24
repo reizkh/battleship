@@ -8,6 +8,7 @@ enum class MessageType : uint32_t {
   PlayerTurn,
   ResultHit,
   ResultMiss,
+  ResultWin,
   BadRequest
 };
 

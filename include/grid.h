@@ -15,6 +15,7 @@ class Grid {
   Grid(CellInfo, size_t);
   bool ChangeState(int, int, CellInfo);
   bool TryPlace(int, int, int, int);
+  bool IsDefeated() const;
   CellInfo GetState(int, int) const;
   size_t Size() const;
 

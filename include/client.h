@@ -32,7 +32,7 @@ class Client : public IMessageReceiver {
 
  protected:
   asio::io_context context_;
-  std::shared_ptr<Connection> connection_;
+  std::unique_ptr<Connection> connection_;
   std::thread thread_context_;
 };
 

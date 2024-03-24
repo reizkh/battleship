@@ -29,3 +29,14 @@ bool Grid::TryPlace(int y, int x, int h, int w) {
 }
 
 size_t Grid::Size() const { return grid_data_.size(); }
+
+bool Grid::IsDefeated() const {
+  for (const auto& row : grid_data_) {
+    for (auto cell : row) {
+      if (cell == CellInfo::Ship) {
+        return false;
+      }
+    }
+  }
+  return true;
+}

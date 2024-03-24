@@ -24,11 +24,16 @@ void Wait(const char* prompt, int max_dots = 3) {
   refresh();
 }
 
+void Status(const char* message) {
+  int row = getmaxy(stdscr);
+  mvprintw(row - 1, 0, "%s", message);
+  refresh();
+}
+
 void UserIO::Run(const std::shared_ptr<Client>& client) {
   int grid_size = static_cast<int>(client->local_grid_.Size());
   int row;
   int col;
-  getmaxyx(stdscr, row, col);
 
   while (client->state_ == GameState::MakingConnection) {
     Wait("Connecting");
@@ -50,7 +55,7 @@ void UserIO::Run(const std::shared_ptr<Client>& client) {
 
     while (!placed) {
       if (client->remote_ready_ && !notified_ready) {
-        mvprintw(row-1, 0, "Other player ready");
+        Status("Other player ready");
         notified_ready = true;
       }
       getmaxyx(stdscr, row, col);
@@ -58,33 +63,20 @@ void UserIO::Run(const std::shared_ptr<Client>& client) {
 
       if (ch != ERR) {
         wclear(stdscr);
-        switch (ch) {
-          case KEY_UP:
-            --pos_y;
-            break;
-          case KEY_DOWN:
-            ++pos_y;
-            break;
-          case KEY_RIGHT:
-            ++pos_x;
-            break;
-          case KEY_LEFT:
-            --pos_x;
-            break;
-          case ' ':
-            std::swap(width, height);
-            break;
-          case '\n':
-            if (client->local_grid_.TryPlace(pos_y, pos_x, height, width)) {
-              placed = true;
-            } else {
-              mvprintw(row - 1, 0, "Ships cannot intersect");
-            }
-            break;
-          default:
-            break;
-        }
         highlight = true;
+        if (ch == KEY_UP) --pos_y;
+        if (ch == KEY_DOWN) ++pos_y;
+        if (ch == KEY_RIGHT) ++pos_x;
+        if (ch == KEY_LEFT) --pos_x;
+        if (ch == ' ') std::swap(width, height);
+        if (ch == '\n') {
+          if (client->local_grid_.TryPlace(pos_y, pos_x, height, width)) {
+            placed = true;
+            highlight = false;
+          } else {
+            Status("Ships cannot intersect");
+          }
+        }
       }
 
       pos_x = std::max(std::min(pos_x, 10 - width), 0);
@@ -106,49 +98,57 @@ void UserIO::Run(const std::shared_ptr<Client>& client) {
   }
   client->CompleteSetup();
 
+  while (client->state_ == GameState::Setup) {
+    Wait("Waiting for them to finish setup");
+  }
+
   int width = 1;
   int height = 1;
-  while (client->state_ != GameState::GameOver) {
+  while (true) {
+    while (client->state_ == GameState::Waiting) {
+      Wait("Waiting the response");
+    }
+    // Game over after our turn means we win
+    if (client->state_ == GameState::GameOver) {
+      Status("Game over. You win! Press any key to exit.");
+      break;
+    }
+
+    wclear(stdscr);
+    Draw(0, 0, client->local_grid_);
+    Draw(row - grid_size, col - grid_size, client->remote_grid_);
+
     while (client->state_ == GameState::GameTheirTurn) {
       Wait("Waiting for their turn");
+    }
+    // Game over after their turn means they win
+    if (client->state_ == GameState::GameOver) {
+      Status("Game over. You lose! Press any key to exit.");
+      break;
     }
 
     bool placed = false;
     while (!placed) {
       getmaxyx(stdscr, row, col);
       int ch = getch();
-
+      wclear(stdscr);
       if (ch != ERR) {
-        wclear(stdscr);
-        switch (ch) {
-          case KEY_UP:
-            --pos_y;
-            break;
-          case KEY_DOWN:
-            ++pos_y;
-            break;
-          case KEY_RIGHT:
-            ++pos_x;
-            break;
-          case KEY_LEFT:
-            --pos_x;
-            break;
-          case '\n':
-            if (client->remote_grid_.GetState(pos_y, pos_x) ==
-                CellInfo::Unknown) {
-              placed = true;
-              client->Hit(pos_y, pos_x);
-              continue;
-            } else {
-              mvprintw(row - 1, 0, "You cannot hit the same cell twice");
-            }
-            break;
-          default:
-            break;
-        }
         highlight = true;
+        if (ch == KEY_UP) --pos_y;
+        if (ch == KEY_DOWN) ++pos_y;
+        if (ch == KEY_RIGHT) ++pos_x;
+        if (ch == KEY_LEFT) --pos_x;
+        if (ch == '\n') {
+          if (client->remote_grid_.GetState(pos_y, pos_x) ==
+              CellInfo::Unknown) {
+            placed = true;
+            highlight = false;
+            client->Hit(pos_y, pos_x);
+          } else {
+            Status("You cannot hit the same cell twice");
+          }
+        }
       }
-
       pos_x = std::max(std::min(pos_x, 10 - width), 0);
       pos_y = std::max(std::min(pos_y, 10 - height), 0);
 
@@ -167,6 +167,7 @@ void UserIO::Run(const std::shared_ptr<Client>& client) {
       highlight = !highlight;
     }
   }
+  while (getch() == ERR) {}
 }
 
 UserIO::UserIO() {

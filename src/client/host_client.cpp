@@ -9,7 +9,7 @@ void HostClient::Connect() {
     acceptor_.async_accept([&](const asio::error_code& ec, tcp::socket&& socket) {
           if (!ec) {
             connection_ =
-                std::make_shared<Connection>(std::move(socket), context_, this);
+                std::make_unique<Connection>(std::move(socket), context_, this);
             OnConnection(ec);
           } else {
           }
