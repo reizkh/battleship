@@ -21,8 +21,8 @@ class Message {
 
     msg.body_.resize(msg.body_.size() + sizeof(T));
 
-    memcpy(msg.body_.data() + msg.body_.size(), &arg, sizeof(T));
-    msg.body_size_ += msg.body_.size();
+    memcpy(msg.body_.data() + msg.body_size_, &arg, sizeof(T));
+    msg.body_size_ = msg.body_.size();
     return msg;
   }
 
@@ -39,7 +39,7 @@ class Message {
  public:
   MessageType type_;
   uint32_t body_size_{0};
-  std::vector<char> body_{0};
+  std::vector<char> body_{};
 
 };
 

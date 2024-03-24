@@ -21,7 +21,7 @@ class Client : public IMessageReceiver {
   void OnConnection(const asio::error_code&);
   void CompleteSetup();
   void ReceiveMessage(Message& msg) override;
-  void Hit(int, int);
+  void Hit(uint16_t, uint16_t);
 
  public:
   GameState state_ = GameState::MakingConnection;

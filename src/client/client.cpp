@@ -8,8 +8,8 @@ void Client::ReceiveMessage(Message& msg) {
   Message response{MessageType::BadRequest};
   switch (msg.type_) {
     case MessageType::PlayerTurn:
-      int x;
-      int y;
+      uint16_t x;
+      uint16_t y;
       msg >> &x >> &y;
       response << y << x;
        if (local_grid_.GetState(y, x) == CellInfo::Ship) {
@@ -55,7 +55,7 @@ Client::~Client() {
   }
 }
 
-void Client::Hit(int y, int x) {
+void Client::Hit(uint16_t y, uint16_t x) {
   Message msg(MessageType::PlayerTurn);
   msg << y << x;
   connection_->SendMessage(msg);
