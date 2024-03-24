@@ -1,0 +1,6 @@
+add_library(UserIO STATIC user_io.cpp)
+find_package(Curses)
+if(CURSES_FOUND)
+    target_include_directories(UserIO PUBLIC "${CURSES_INCLUDE_DIRS}")
+    target_link_libraries(UserIO PUBLIC "${CURSES_LIBRARIES}")
+endif()
