@@ -5,7 +5,9 @@
 
 enum class MessageType : uint32_t {
   SetupReady,
+  MoveDone,
   PlayerTurn,
+  ResultKill,
   ResultHit,
   ResultMiss,
   ResultWin,
