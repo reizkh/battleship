@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 
 int main() {
   UserIO io_object;
-  UserIO::Run();
+  io_object.Run();
 /*  std::shared_ptr<Client> c;
 
   if (parsed_args["launch-mode"].as<std::string>() == "guest") {

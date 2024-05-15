@@ -9,59 +9,123 @@
 
 #include "grid.h"
 
-void Wait(const char* prompt, int max_dots = 3) {
-  static int dots = 0;
-
-  int row = getmaxy(stdscr);
+void UserIO::Wait(const char* prompt, size_t max_dots = 3) const {
+  static size_t dots = 0;
 
   std::this_thread::sleep_for(300ms);
-
-  mvprintw(row - 1, 0, "%s", prompt);
-  if (dots == 0) {
-    mvprintw(row - 1, (int)strlen(prompt), "   ");
-  } else {
-    mvaddch(row - 1, (int)strlen(prompt) + dots - 1, '.');
+  size_t len = strlen(prompt);
+  auto* with_dots = new char[len + dots + 1](0);
+  strcpy(with_dots, prompt);
+  for (size_t i = len; i < len + dots; ++i) {
+    with_dots[i] = '.';
   }
+  Status(with_dots);
   dots = ++dots % (max_dots + 1);
-  refresh();
 }
 
-void Status(const char* message) {
+void UserIO::Status(const char* message) const {
+  auto* pwin = static_cast<WINDOW*>(status_bar);
   int row = getmaxy(stdscr);
-  mvprintw(row - 1, 0, "%s", message);
-  refresh();
+  wclear(pwin);
+  mvwin(pwin, row - 1, 0);
+  mvwprintw(pwin, 0, 0, "%s", message);
+  wrefresh(pwin);
 }
 
-void UserIO::Start(std::shared_ptr<Client>& c) {
+void UserIO::Start(std::shared_ptr<Client>& c) const {
   int row;
   int col;
   int menu_w = 30;
   int menu_h = 7;
   getmaxyx(stdscr, row, col);
   WINDOW* menu_box = newwin(menu_h, menu_w, 0, 0);
-  int choice;
-  do {
-    wclear(menu_box);
-    wrefresh(menu_box);
-    getmaxyx(stdscr, row, col);
-    box(menu_box, ACS_VLINE, ACS_HLINE);
-    mvwin(menu_box, (row - menu_h) / 2, (col - menu_w) / 2);
-    mvwaddstr(menu_box, 1, 1, "(H)ost a new game");
-    mvwaddstr(menu_box, 3, 1, "(C)onnect to a game");
+  wclear(menu_box);
+  wrefresh(menu_box);
+  getmaxyx(stdscr, row, col);
+  mvwin(menu_box, (row - menu_h) / 2, (col - menu_w) / 2);
+  box(menu_box, ACS_VLINE, ACS_HLINE);
+  mvwaddstr(menu_box, 1, 1, "(H)ost a new game");
+  mvwaddstr(menu_box, 3, 1, "(C)onnect to a game");
 
-    choice = wgetch(menu_box);
-  } while (choice != 'H' && choice != 'C');
-  c = std::make_shared<HostClient>(60000);
+  int ch;
+  do {
+    ch = wgetch(menu_box);
+  } while (ch != 'c' && ch != 'h');
+
+  wclear(menu_box);
+  wrefresh(menu_box);
+  getmaxyx(stdscr, row, col);
+  box(menu_box, ACS_VLINE, ACS_HLINE);
+  mvwin(menu_box, (row - menu_h) / 2, (col - menu_w) / 2);
+  std::string input;
+
+  if (ch == 'c') {
+    std::string address;
+    int port;
+
+    mvwaddstr(menu_box, 1, 1, "Enter address: ");
+    wmove(menu_box, 2, 1);
+    do {
+      ch = wgetch(menu_box);
+      if (ch == '\n') {
+        try {
+          auto delim = input.find(':');
+          address = input.substr(0, delim);
+          port = std::stoi(input.substr(delim + 1, input.size()));
+          c = std::make_shared<GuestClient>(address, port);
+          return;
+        } catch (...) {
+          Status("An error occured");
+        }
+      } else if ((ch == 0x7F || ch == KEY_BACKSPACE) && !input.empty()) {
+        waddch(menu_box, '\b');
+        waddch(menu_box, ' ');
+        waddch(menu_box, '\b');
+        input.pop_back();
+      } else if (ch != ERR && input.size() < 21) {
+        waddch(menu_box, ch);
+        input.push_back(static_cast<char>(ch & A_CHARTEXT));
+      }
+    } while (true);
+  } else {
+    int port;
+
+    mvwaddstr(menu_box, 1, 1, "Enter port: ");
+    wmove(menu_box, 2, 1);
+    do {
+      ch = wgetch(menu_box);
+      if (ch == '\n') {
+        try {
+          port = std::stoi(input);
+          c = std::make_shared<HostClient>(port);
+          return;
+        } catch (...) {
+          Status("An error occured");
+        }
+      } else if ((ch == 0x7F || ch == KEY_BACKSPACE) && !input.empty()) {
+        waddch(menu_box, '\b');
+        waddch(menu_box, ' ');
+        waddch(menu_box, '\b');
+        input.pop_back();
+      } else if (ch != ERR && input.size() < 5) {
+        waddch(menu_box, ch);
+        input.push_back(static_cast<char>(ch & A_CHARTEXT));
+      }
+    } while (true);
+  }
 }
 
-void UserIO::Run() {
+void UserIO::Run() const {
   std::shared_ptr<Client> client;
   Start(client);
+  clear();
+  refresh();
 
   int grid_size = static_cast<int>(client->local_grid_.Size());
   int row;
   int col;
 
+  client->Connect();
   while (client->state_ == GameState::MakingConnection) {
     Wait("Connecting");
   }
@@ -205,9 +269,13 @@ UserIO::UserIO() {
   halfdelay(3);
   keypad(stdscr, true);
   curs_set(0);
+  status_bar = newwin(1, 50, 0, 0);
 }
 
-UserIO::~UserIO() { endwin(); }
+UserIO::~UserIO() {
+  endwin();
+  delwin(static_cast<WINDOW*>(status_bar));
+}
 
 void UserIO::Draw(int top, int left, const Grid& grid) {
   for (int i = 0; i < grid.Size(); ++i) {
