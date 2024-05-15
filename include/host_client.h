@@ -4,10 +4,8 @@
 #include "client.h"
 
 class HostClient : public virtual Client {
- protected:
-  HostClient(uint16_t);
-
  public:
+  HostClient(uint16_t);
   ~HostClient() override;
   static std::shared_ptr<HostClient> Create(uint16_t);
   void Connect() override;

@@ -1,5 +1,7 @@
 #include "user_io.h"
 
+#include <guest_client.h>
+#include <host_client.h>
 #include <ncurses.h>
 
 #include <iostream>
@@ -30,7 +32,32 @@ void Status(const char* message) {
   refresh();
 }
 
-void UserIO::Run(const std::shared_ptr<Client>& client) {
+void UserIO::Start(std::shared_ptr<Client>& c) {
+  int row;
+  int col;
+  int menu_w = 30;
+  int menu_h = 7;
+  getmaxyx(stdscr, row, col);
+  WINDOW* menu_box = newwin(menu_h, menu_w, 0, 0);
+  int choice;
+  do {
+    wclear(menu_box);
+    wrefresh(menu_box);
+    getmaxyx(stdscr, row, col);
+    box(menu_box, ACS_VLINE, ACS_HLINE);
+    mvwin(menu_box, (row - menu_h) / 2, (col - menu_w) / 2);
+    mvwaddstr(menu_box, 1, 1, "(H)ost a new game");
+    mvwaddstr(menu_box, 3, 1, "(C)onnect to a game");
+
+    choice = wgetch(menu_box);
+  } while (choice != 'H' && choice != 'C');
+  c = std::make_shared<HostClient>(60000);
+}
+
+void UserIO::Run() {
+  std::shared_ptr<Client> client;
+  Start(client);
+
   int grid_size = static_cast<int>(client->local_grid_.Size());
   int row;
   int col;
@@ -167,7 +194,8 @@ void UserIO::Run(const std::shared_ptr<Client>& client) {
       highlight = !highlight;
     }
   }
-  while (getch() == ERR) {}
+  while (getch() == ERR) {
+  }
 }
 
 UserIO::UserIO() {
