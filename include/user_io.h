@@ -8,7 +8,11 @@ class UserIO {
  public:
   UserIO();
   ~UserIO();
-  static void Run(const std::shared_ptr<Client>&);
+  void Wait(const char*, size_t) const;
+  void Run() const;
+  void Start(std::shared_ptr<Client>&) const;
   static void Draw(int, int, const Grid&);
+  void Status(const char*) const;
+  void* status_bar;
 };
 #endif  // BATTLESHIP_USER_IO_H

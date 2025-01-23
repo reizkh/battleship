@@ -14,7 +14,7 @@ enum class GameState {
   GameOver,
 };
 
-class Client : public IMessageReceiver {
+class Client : public IMessageReceiver, std::enable_shared_from_this<Client> {
  public:
   virtual ~Client();
   virtual void Connect() = 0;

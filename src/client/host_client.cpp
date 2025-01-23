@@ -21,8 +21,4 @@ void HostClient::Connect() {
   }
 }
 
-std::shared_ptr<HostClient> HostClient::Create(uint16_t port) {
-  return std::shared_ptr<HostClient>(new HostClient(port));
-}
-
 HostClient::~HostClient() = default;
