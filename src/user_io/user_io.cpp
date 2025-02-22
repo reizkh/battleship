@@ -1,13 +1,14 @@
 #include "user_io.h"
+#include "grid.h"
+#include "guest_client.h"
+#include "host_client.h"
 
-#include <guest_client.h>
-#include <host_client.h>
 #include <ncurses.h>
 
 #include <iostream>
 #include <vector>
 
-#include "grid.h"
+using namespace std::chrono_literals;
 
 void UserIO::Wait(const char* prompt, size_t max_dots = 3) const {
   static size_t dots = 0;
@@ -124,7 +125,7 @@ void UserIO::Run() const {
   int grid_size = static_cast<int>(client->local_grid_.Size());
   int row;
   int col;
-
+  
   client->Connect();
   while (client->state_ == GameState::MakingConnection) {
     Wait("Connecting");
@@ -234,7 +235,7 @@ void UserIO::Run() const {
               CellInfo::Unknown) {
             placed = true;
             highlight = false;
-            client->Hit(pos_y, pos_x);
+            client->SendTurn(pos_y, pos_x);
           } else {
             Status("You cannot hit the same cell twice");
           }

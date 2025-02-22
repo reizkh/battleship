@@ -1,9 +1,11 @@
 #ifndef BATTLESHIP_INCLUDE_CLIENT_H_
 #define BATTLESHIP_INCLUDE_CLIENT_H_
 
-#include "common.h"
+#include "message.h"
 #include "connection.h"
 #include "grid.h"
+
+#include <thread>
 
 enum class GameState {
   MakingConnection,
@@ -14,14 +16,20 @@ enum class GameState {
   GameOver,
 };
 
-class Client : public IMessageReceiver, std::enable_shared_from_this<Client> {
+class Client : public MessageReceiver {
  public:
   virtual ~Client();
   virtual void Connect() = 0;
   void OnConnection(const asio::error_code&);
   void CompleteSetup();
-  void ReceiveMessage(Message& msg) override;
-  void Hit(uint16_t, uint16_t);
+  void SendTurn(std::int32_t, std::int32_t);
+
+  void HandleMessage(TurnPosition&) override;
+  void HandleMessage(LastShipDestroyed&) override;
+  void HandleMessage(Hit&) override;
+  void HandleMessage(Miss&) override;
+  void HandleMessage(Kill&) override;
+  void HandleMessage(SetupReady&) override;
 
  public:
   GameState state_ = GameState::MakingConnection;
@@ -32,7 +40,7 @@ class Client : public IMessageReceiver, std::enable_shared_from_this<Client> {
 
  protected:
   asio::io_context context_;
-  std::unique_ptr<Connection> connection_;
+  std::shared_ptr<Connection> connection_;
   std::thread thread_context_;
 };
 

@@ -1,7 +1,6 @@
 #ifndef BATTLESHIP_USER_IO_H
 #define BATTLESHIP_USER_IO_H
 
-#include "common.h"
 #include "client.h"
 
 class UserIO {

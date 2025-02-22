@@ -7,10 +7,9 @@ class GuestClient : public virtual Client {
  public:
   GuestClient(const std::string&, uint16_t);
   ~GuestClient() override;
-  static std::shared_ptr<GuestClient> Create(const std::string&, uint16_t);
   void Connect() override;
 
- protected:
+ private:
   tcp::endpoint endpoint_;
 };
 

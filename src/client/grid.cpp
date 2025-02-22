@@ -2,7 +2,7 @@
 
 Grid::Grid(CellInfo def, size_t init_size) : size(init_size), grid_data_(size, {size, def}) {}
 
-bool Grid::IsShip(CellInfo value) const { return value == CellInfo::Hit || value == CellInfo::Ship; }
+bool Grid::IsShip(CellInfo value) const { return value == CellInfo::Dead || value == CellInfo::Ship; }
 
 bool Grid::IsSafe(int coord) const { return (coord >= 0 && coord < size); }
 
@@ -96,7 +96,7 @@ bool Grid::IsDead(int cy, int cx) const {
   std::vector<int> coords = GetShip(cy, cx);
   for (int y = coords[0]; y <= coords[2]; ++y) {
     for (int x = coords[1]; x <= coords[3]; ++x) {
-      if (grid_data_[y][x] != CellInfo::Hit) {
+      if (grid_data_[y][x] != CellInfo::Dead) {
         return false;
       }
     }
