@@ -1,1 +1,1 @@
-add_library(Connection STATIC connection.cpp message.cpp)
+add_library(Connection STATIC connection.cpp)

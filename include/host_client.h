@@ -7,7 +7,6 @@ class HostClient : public virtual Client {
  public:
   HostClient(uint16_t);
   ~HostClient() override;
-  static std::shared_ptr<HostClient> Create(uint16_t);
   void Connect() override;
 
  private:
